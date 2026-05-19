@@ -1,63 +1,63 @@
-<<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <title>ChatRoom 95</title>
     <style>
-        body { background-color: #000080; font-family: 'MS Sans Serif', 'Arial', sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        .win95-window { background-color: #0000AA; border: 2px solid; border-color: #5555FF #000 #000 #5555FF; width: 400px; padding: 2px; color: white; }
-        .title-bar { background: #000080; color: white; padding: 3px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #5555FF; display: flex; justify-content: space-between; }
+        body { background-color: #000080; font-family: 'MS Sans Serif', sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .win95-window { background-color: #0000AA; border: 2px solid #5555FF; width: 400px; padding: 2px; color: white; }
+        .title-bar { background: #000080; color: white; padding: 3px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #5555FF; }
         .content { padding: 15px; }
-        
-        input { border: 2px inset #fff; padding: 5px; width: 90%; margin-bottom: 10px; background: #fff; color: black; }
+        input { border: 2px inset #fff; padding: 5px; width: 90%; margin-bottom: 10px; color: black; }
         button { background-color: #0000AA; border: 2px outset #5555FF; padding: 5px 15px; color: white; font-weight: bold; cursor: pointer; }
-        button:active { border-style: inset; }
-        
-        #chat-flow { background: #000044; border: 2px inset #5555FF; height: 200px; overflow-y: scroll; margin-bottom: 10px; font-size: 13px; padding: 5px; color: #00FF00; }
-        .msg { margin-bottom: 5px; border-bottom: 1px solid #000080; }
-        .admin-tag { color: #FFD700; font-weight: bold; margin-right: 5px; } /* Gold für Admin */
+        #chat-flow { background: #000044; border: 2px inset #5555FF; height: 200px; overflow-y: scroll; margin-bottom: 10px; padding: 5px; color: #00FF00; }
+        .admin-tag { color: #FFD700; font-weight: bold; }
     </style>
 </head>
 <body>
-
     <div class="win95-window">
-        <div class="title-bar"><span>ChatRoom 95</span><span>X</span></div>
+        <div class="title-bar">ChatRoom 95</div>
         <div class="content">
             <div id="login-screen">
                 <input type="text" id="room-input" placeholder="Raum Nummer...">
                 <input type="password" id="token-input" placeholder="Admin Passwort...">
                 <button onclick="enterRoom()">Wand betreten</button>
             </div>
-
             <div id="chat-screen" style="display:none;">
                 <div id="chat-flow"></div>
                 <input type="text" id="msg-input" placeholder="Nachricht...">
                 <button onclick="sendMessage()">Senden</button>
-                <div id="admin-tools" style="display:none; margin-top:10px;">
-                    <button onclick="alert('Raum wurde geleert!')">Admin: Raum leeren</button>
-                </div>
             </div>
         </div>
     </div>
 
     <script>
-        const ADMIN_PASS = "deinPasswort123"; 
+        // --- HIER AUSFÜLLEN ---
+        const GITHUB_TOKEN = "DEIN_TOKEN_HIER_EINTRAGEN"; 
+        const ADMIN_PASS = "DEIN_PASSWORT_HIER_EINTRAGEN";
+        const REPO = "87z-ai/87z-ai";
+        // ----------------------
+
         let isAdmin = false;
+        let currentRoom = "";
 
         function enterRoom() {
+            currentRoom = `raum_${document.getElementById('room-input').value}.json`;
             isAdmin = (document.getElementById('token-input').value === ADMIN_PASS);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('chat-screen').style.display = 'block';
-            if(isAdmin) document.getElementById('admin-tools').style.display = 'block';
+            document.getElementById('chat-flow').innerHTML = "Verbindung zu " + currentRoom + "...";
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const text = document.getElementById('msg-input').value;
-            const sender = isAdmin ? '<span class="admin-tag">[Admin]</span>' : '';
-            const displayMsg = `<div class="msg">${sender}${text}</div>`;
-            
-            document.getElementById('chat-flow').innerHTML += displayMsg;
+            const sender = isAdmin ? '<span class="admin-tag">[Admin]</span> ' : '';
+            document.getElementById('chat-flow').innerHTML += `<div>${sender}${text}</div>`;
             document.getElementById('msg-input').value = '';
+            
+            // Logik zum Speichern bei GitHub kommt hier rein
+            // Da dies ein komplexer API-Aufruf ist, achte darauf, 
+            // dass der Token Schreibrechte ("repo") hat.
         }
     </script>
 </body>

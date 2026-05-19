@@ -10,9 +10,8 @@
         .content { padding: 15px; }
         input { border: 2px inset #fff; padding: 5px; width: 90%; margin-bottom: 10px; color: black; }
         button { background-color: #0000AA; border: 2px outset #5555FF; padding: 5px 15px; color: white; font-weight: bold; cursor: pointer; }
-        button:active { border-style: inset; }
         #chat-flow { background: #000044; border: 2px inset #5555FF; height: 200px; overflow-y: scroll; margin-bottom: 10px; padding: 5px; color: #00FF00; }
-        .admin-tag { color: #FFD700; font-weight: bold; margin-right: 5px; }
+        .admin-tag { color: #FFD700; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -20,12 +19,12 @@
         <div class="title-bar">ChatRoom 95</div>
         <div class="content">
             <div id="login-screen">
-                <input type="text" id="room-input" placeholder="Raum Nummer...">
+                <input type="text" id="room-input" placeholder="Raum Nummer (z.B. 1)">
                 <input type="password" id="token-input" placeholder="Admin Passwort...">
                 <button onclick="enterRoom()">Wand betreten</button>
             </div>
             <div id="chat-screen" style="display:none;">
-                <div id="chat-flow"></div>
+                <div id="chat-flow">Nachrichten werden geladen...</div>
                 <input type="text" id="msg-input" placeholder="Nachricht...">
                 <button onclick="sendMessage()">Senden</button>
             </div>
@@ -33,25 +32,66 @@
     </div>
 
     <script>
+        // --- DEINE DATEN ---
         const GITHUB_TOKEN = "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"; 
         const ADMIN_PASS = "X7#mK!2pQ$9vWL";
         const REPO = "87z-ai/87z-ai";
+        // -------------------
+
         let isAdmin = false;
+        let currentRoom = "";
+        let sha = ""; // Wird benötigt, um Dateien bei GitHub zu überschreiben
 
         function enterRoom() {
+            currentRoom = `raum_${document.getElementById('room-input').value}.json`;
+            isAdmin = (document.getElementById('token-input').value === ADMIN_PASS);
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('chat-screen').style.display = 'block';
-            isAdmin = (document.getElementById('token-input').value === ADMIN_PASS);
-            document.getElementById('chat-flow').innerHTML = "Verbunden. Viel Spaß!";
+            loadMessages();
+            setInterval(loadMessages, 3000); // Lädt alle 3 Sekunden neu
         }
 
-        function sendMessage() {
-            const text = document.getElementById('msg-input').value;
-            if(!text) return;
+        async function loadMessages() {
+            try {
+                const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${currentRoom}`, {
+                    headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Cache-Control': 'no-cache' }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    sha = data.sha;
+                    const msgs = JSON.parse(atob(data.content));
+                    document.getElementById('chat-flow').innerHTML = msgs.map(m => `<div>${m}</div>`).join('');
+                }
+            } catch(e) { document.getElementById('chat-flow').innerHTML = "Raum existiert noch nicht."; }
+        }
+
+        async function sendMessage() {
+            const msg = document.getElementById('msg-input').value;
+            if(!msg) return;
             const sender = isAdmin ? '<span class="admin-tag">[Admin]</span> ' : '';
-            document.getElementById('chat-flow').innerHTML += `<div>${sender}${text}</div>`;
+            
+            // Aktuelle Nachrichten holen, neue hinzufügen, hochladen
+            let msgs = [];
+            try { 
+                const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${currentRoom}`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}` }});
+                const data = await res.json();
+                msgs = JSON.parse(atob(data.content));
+                sha = data.sha;
+            } catch(e) {}
+            
+            msgs.push(`${sender}${msg}`);
+            
+            await fetch(`https://api.github.com/repos/${REPO}/contents/${currentRoom}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: "Neue Nachricht",
+                    content: btoa(JSON.stringify(msgs)),
+                    sha: sha
+                })
+            });
             document.getElementById('msg-input').value = '';
-            // Hinweis: Das automatische Speichern per API benötigt weitere GitHub-API-Befehle (fetch mit PUT).
+            loadMessages();
         }
     </script>
 </body>

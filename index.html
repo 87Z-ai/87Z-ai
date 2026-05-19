@@ -13,8 +13,6 @@
         input { flex-grow: 1; padding: 5px; border: 2px inset #000; }
         button { background-color: #d4d4d4; border: 2px outset #fff; border-right-color: #000; border-bottom-color: #000; padding: 2px 10px; cursor: pointer; font-family: 'Tahoma', sans-serif; }
         button:active { border-style: inset; border-right-color: #fff; border-bottom-color: #fff; border-left-color: #000; border-top-color: #000; }
-        
-        /* Admin Bereich */
         .admin-section { border: 2px dashed #808080; padding: 10px; background: #c0c0c0; margin-bottom: 10px; display: none; }
         .status { font-size: 11px; color: #444; font-family: monospace; display: flex; justify-content: space-between; }
     </style>
@@ -22,7 +20,7 @@
 <body>
 
 <div class="window">
-    <div class="title-bar"><span>ChatRoom 95</span><span>X</span></div>
+    <div class="title-bar"><span>ChatRoom 95</span></div>
     <div class="content">
         <div id="chat-window">Verbindung wird aufgebaut...</div>
         <div class="input-area">
@@ -32,8 +30,8 @@
 
         <div id="admin-tools" class="admin-section">
             <strong>System-Verwaltung:</strong><br>
+            <button onclick="sendGlobal()">Globale Durchsage</button>
             <button onclick="clearRoom()">Raum leeren</button>
-            <button onclick="location.reload()">Reset</button>
         </div>
 
         <div class="status">
@@ -48,19 +46,24 @@
     const ADMIN_PASS = "X7#mK!2pQ$9vWL";
     const REPO = "87z-ai/87z-ai";
     const FILE = "raum_1.json";
+    // Der Status bleibt nun im sessionStorage gespeichert, auch wenn die Funktion neu lädt
+    let isAdmin = sessionStorage.getItem('isAdmin') === 'true';
 
     function requestAdmin() {
+        if(isAdmin) return;
         const input = prompt("Admin Passwort:");
         if(input === ADMIN_PASS) {
+            isAdmin = true;
+            sessionStorage.setItem('isAdmin', 'true');
             document.getElementById('admin-tools').style.display = 'block';
-            alert("Admin-Modus aktiviert");
-        } else {
-            alert("Falsches Passwort!");
         }
     }
 
-    async function api(method, body = null) {
-        const url = `https://api.github.com/repos/${REPO}/contents/${FILE}?t=${Date.now()}`;
+    // Wenn Seite lädt, Admin-Status wiederherstellen
+    if(isAdmin) document.getElementById('admin-tools').style.display = 'block';
+
+    async function api(file, method, body = null) {
+        const url = `https://api.github.com/repos/${REPO}/contents/${file}?t=${Date.now()}`;
         return await fetch(url, {
             method: method,
             headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Content-Type': 'application/json' },
@@ -70,36 +73,46 @@
 
     async function loadMessages() {
         try {
-            const res = await api('GET');
-            if (res.status === 404) {
-                await api('PUT', { message: "Init", content: btoa("[]") });
-                return;
-            }
+            const res = await api(FILE, 'GET');
             const data = await res.json();
             const msgs = JSON.parse(atob(data.content));
             document.getElementById('chat-window').innerHTML = msgs.join('<br>');
             document.getElementById('status').innerText = "[STATUS: Verbunden]";
-        } catch(e) {
-            document.getElementById('status').innerText = "[STATUS: Fehler]";
-        }
+        } catch(e) { document.getElementById('status').innerText = "[STATUS: Fehler]"; }
     }
 
     async function sendMessage() {
         const input = document.getElementById('msg-input');
         if(!input.value) return;
-        const res = await api('GET');
+        const res = await api(FILE, 'GET');
         const data = await res.json();
         let msgs = JSON.parse(atob(data.content));
-        msgs.push(`[${new Date().toLocaleTimeString().slice(0,5)}]: ${input.value}`);
-        await api('PUT', { message: "Msg", content: btoa(JSON.stringify(msgs)), sha: data.sha });
+        msgs.push(`${isAdmin ? '[ADMIN] ' : ''}[${new Date().toLocaleTimeString().slice(0,5)}]: ${input.value}`);
+        await api(FILE, 'PUT', { message: "Msg", content: btoa(JSON.stringify(msgs)), sha: data.sha });
         input.value = '';
         loadMessages();
     }
 
+    async function sendGlobal() {
+        const text = prompt("Globale Nachricht eingeben:");
+        if(!text) return;
+        const rooms = ["raum_1.json", "raum_2.json"]; // Hier alle deine Räume eintragen
+        for(let room of rooms) {
+            try {
+                const res = await api(room, 'GET');
+                const data = await res.json();
+                let msgs = JSON.parse(atob(data.content));
+                msgs.push(`[GLOBALE DURCHSAGE]: ${text}`);
+                await api(room, 'PUT', { message: "Global", content: btoa(JSON.stringify(msgs)), sha: data.sha });
+            } catch(e) { console.error("Konnte " + room + " nicht erreichen"); }
+        }
+        alert("Globale Nachricht wurde verteilt.");
+    }
+
     async function clearRoom() {
-        const res = await api('GET');
+        const res = await api(FILE, 'GET');
         const data = await res.json();
-        await api('PUT', { message: "Reset", content: btoa("[]"), sha: data.sha });
+        await api(FILE, 'PUT', { message: "Reset", content: btoa("[]"), sha: data.sha });
         loadMessages();
     }
 

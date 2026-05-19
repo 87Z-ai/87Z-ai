@@ -1,22 +1,21 @@
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <title>ChatRoom 95</title>
     <style>
-        /* Klassisches Win95 Design */
-        body { background-color: #c0c0c0; font-family: 'MS Sans Serif', 'Arial', sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        .win95-window { background-color: #c0c0c0; border: 2px solid; border-color: #fff #000 #000 #fff; width: 400px; padding: 2px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
-        .title-bar { background: #000080; color: white; padding: 2px 5px; font-weight: bold; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-        .content { padding: 10px; border: 2px inset #fff; margin: 2px; }
+        body { background-color: #000080; font-family: 'MS Sans Serif', 'Arial', sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .win95-window { background-color: #0000AA; border: 2px solid; border-color: #5555FF #000 #000 #5555FF; width: 400px; padding: 2px; color: white; }
+        .title-bar { background: #000080; color: white; padding: 3px; font-weight: bold; font-size: 14px; border-bottom: 1px solid #5555FF; display: flex; justify-content: space-between; }
+        .content { padding: 15px; }
         
-        input { border: 2px inset #fff; padding: 4px; width: 95%; margin-bottom: 10px; background: #fff; }
-        button { background-color: #c0c0c0; border: 2px outset #fff; padding: 4px 12px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        input { border: 2px inset #fff; padding: 5px; width: 90%; margin-bottom: 10px; background: #fff; color: black; }
+        button { background-color: #0000AA; border: 2px outset #5555FF; padding: 5px 15px; color: white; font-weight: bold; cursor: pointer; }
         button:active { border-style: inset; }
         
-        #chat-flow { background: #fff; border: 2px inset #fff; height: 200px; overflow-y: scroll; margin-bottom: 10px; font-size: 12px; padding: 5px; }
-        .msg { margin-bottom: 5px; border-bottom: 1px dotted #ccc; }
-        .admin-tag { color: red; font-weight: bold; margin-right: 5px; }
+        #chat-flow { background: #000044; border: 2px inset #5555FF; height: 200px; overflow-y: scroll; margin-bottom: 10px; font-size: 13px; padding: 5px; color: #00FF00; }
+        .msg { margin-bottom: 5px; border-bottom: 1px solid #000080; }
+        .admin-tag { color: #FFD700; font-weight: bold; margin-right: 5px; } /* Gold für Admin */
     </style>
 </head>
 <body>
@@ -35,28 +34,21 @@
                 <input type="text" id="msg-input" placeholder="Nachricht...">
                 <button onclick="sendMessage()">Senden</button>
                 <div id="admin-tools" style="display:none; margin-top:10px;">
-                    <hr>
-                    <button onclick="alert('Funktion aktiv!')">Admin: Raum leeren</button>
+                    <button onclick="alert('Raum wurde geleert!')">Admin: Raum leeren</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Deine Konfiguration
-        const REPO = "87z-ai/87z-ai";
-        const ADMIN_PASS = "deinPasswort123"; // Setze hier dein Passwort fest
-        let currentRoom = "";
+        const ADMIN_PASS = "deinPasswort123"; 
         let isAdmin = false;
 
         function enterRoom() {
-            currentRoom = `raum_${document.getElementById('room-input').value}.json`;
             isAdmin = (document.getElementById('token-input').value === ADMIN_PASS);
-            
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('chat-screen').style.display = 'block';
             if(isAdmin) document.getElementById('admin-tools').style.display = 'block';
-            loadMessages();
         }
 
         function sendMessage() {
@@ -66,13 +58,6 @@
             
             document.getElementById('chat-flow').innerHTML += displayMsg;
             document.getElementById('msg-input').value = '';
-            // Hinweis: Das Speichern in GitHub erfordert einen API-Token-Key, 
-            // den wir in einer einfachen HTML-Seite aus Sicherheitsgründen nicht direkt speichern sollten.
-        }
-        
-        async function loadMessages() {
-            document.getElementById('chat-flow').innerText = "Verbindung zum ChatRoom...";
-            // Hier würde der Ladevorgang von GitHub folgen
         }
     </script>
 </body>

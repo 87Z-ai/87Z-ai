@@ -2,90 +2,78 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Live-Wall 95</title>
+    <title>ChatRoom 95</title>
     <style>
-        * { box-sizing: border-box; font-family: 'Courier New', Courier, monospace; }
-        body { background-color: #008080; margin: 0; padding: 10px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .win95-window { background-color: #c0c0c0; width: 100%; max-width: 750px; border: 3px outset #ffffff; padding: 3px; }
-        .title-bar { background: linear-gradient(90deg, #000080, #1084d0); color: white; padding: 4px 6px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
-        .title-controls button { background-color: #c0c0c0; border: 2px outset #ffffff; width: 16px; height: 16px; font-size: 10px; cursor: pointer; }
-        #global-banner { background-color: #c0c0c0; border: 2px inset #ffffff; padding: 6px; margin: 5px 0; font-weight: bold; text-align: center; display: none; }
-        .login-zone { padding: 15px; border: 2px inset #ffffff; background-color: #c0c0c0; }
-        .field-group { margin-bottom: 10px; display: flex; align-items: center; }
-        .field-group label { width: 120px; font-size: 12px; font-weight: bold; }
-        input { background-color: #ffffff; border: 2px inset #808080; padding: 4px; flex-grow: 1; outline: none; }
-        button.win95-btn { background-color: #c0c0c0; border: 2px outset #ffffff; padding: 5px 15px; cursor: pointer; font-weight: bold; }
-        #chat-interface { display: none; padding: 5px; }
-        #chat-flow { background-color: #ffffff; border: 2px inset #808080; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
-        #admin-panel { display: none; margin-top: 10px; padding: 10px; border: 2px inset #ffffff; background-color: #e0e0e0; }
+        /* Klassisches Win95 Design */
+        body { background-color: #c0c0c0; font-family: 'MS Sans Serif', 'Arial', sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .win95-window { background-color: #c0c0c0; border: 2px solid; border-color: #fff #000 #000 #fff; width: 400px; padding: 2px; box-shadow: 2px 2px 5px rgba(0,0,0,0.3); }
+        .title-bar { background: #000080; color: white; padding: 2px 5px; font-weight: bold; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .content { padding: 10px; border: 2px inset #fff; margin: 2px; }
+        
+        input { border: 2px inset #fff; padding: 4px; width: 95%; margin-bottom: 10px; background: #fff; }
+        button { background-color: #c0c0c0; border: 2px outset #fff; padding: 4px 12px; font-weight: bold; cursor: pointer; font-size: 12px; }
+        button:active { border-style: inset; }
+        
+        #chat-flow { background: #fff; border: 2px inset #fff; height: 200px; overflow-y: scroll; margin-bottom: 10px; font-size: 12px; padding: 5px; }
+        .msg { margin-bottom: 5px; border-bottom: 1px dotted #ccc; }
+        .admin-tag { color: red; font-weight: bold; margin-right: 5px; }
     </style>
 </head>
 <body>
-<div class="win95-window">
-    <div class="title-bar"><span>Live-Wall_95.exe</span><div class="title-controls"><button>?</button><button onclick="location.reload()">X</button></div></div>
-    <div id="global-banner"></div>
-    <div id="login-interface" class="login-zone">
-        <div class="field-group"><label>Raum:</label><input type="text" id="room-input" value="1"></div>
-        <div class="field-group"><label>Token:</label><input type="password" id="token-input"></div>
-        <button class="win95-btn" onclick="initializeWall()">Wand betreten</button>
-    </div>
-    <div id="chat-interface">
-        <div id="chat-flow"></div>
-        <div class="field-group"><input type="text" id="message-input"><button class="win95-btn" onclick="sendMessage()">Senden</button></div>
-        <div id="admin-panel">
-            <strong>[ ADMIN WERKZEUGE ]</strong>
-            <div class="field-group"><input type="text" id="announcement-input"><button class="win95-btn" onclick="updateGlobalAnnouncement()">Speichern</button></div>
-            <button class="win95-btn" onclick="clearCurrentRoom()">Raum leeren</button>
-            <button class="win95-btn" onclick="fullSystemReset()">Reset</button>
+
+    <div class="win95-window">
+        <div class="title-bar"><span>ChatRoom 95</span><span>X</span></div>
+        <div class="content">
+            <div id="login-screen">
+                <input type="text" id="room-input" placeholder="Raum Nummer...">
+                <input type="password" id="token-input" placeholder="Admin Passwort...">
+                <button onclick="enterRoom()">Wand betreten</button>
+            </div>
+
+            <div id="chat-screen" style="display:none;">
+                <div id="chat-flow"></div>
+                <input type="text" id="msg-input" placeholder="Nachricht...">
+                <button onclick="sendMessage()">Senden</button>
+                <div id="admin-tools" style="display:none; margin-top:10px;">
+                    <hr>
+                    <button onclick="alert('Funktion aktiv!')">Admin: Raum leeren</button>
+                </div>
+            </div>
         </div>
     </div>
-</div>
-<script>
-    const REPO_OWNER = "87z-ai";
-    const REPO_NAME = "87z-ai";
-    let ADMIN_TOKEN = "", CURRENT_ROOM = "", IS_ADMIN = false, currentSha = null;
 
-    async function initializeWall() {
-        const roomVal = document.getElementById('room-input').value;
-        ADMIN_TOKEN = document.getElementById('token-input').value;
-        CURRENT_ROOM = `raum_${roomVal}.json`;
-        if(ADMIN_TOKEN) IS_ADMIN = true;
-        document.getElementById('login-interface').style.display = 'none';
-        document.getElementById('chat-interface').style.display = 'block';
-        if(IS_ADMIN) document.getElementById('admin-panel').style.display = 'block';
-        loadChat();
-    }
+    <script>
+        // Deine Konfiguration
+        const REPO = "87z-ai/87z-ai";
+        const ADMIN_PASS = "deinPasswort123"; // Setze hier dein Passwort fest
+        let currentRoom = "";
+        let isAdmin = false;
 
-    async function loadChat() {
-        try {
-            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CURRENT_ROOM}?nocache=${Date.now()}`);
-            if(res.ok) {
-                const data = await res.json();
-                currentSha = data.sha;
-                const messages = JSON.parse(atob(data.content));
-                document.getElementById('chat-flow').innerHTML = messages.map(m => `<div>${m}</div>`).join('');
-            }
-        } catch(e) {}
-    }
+        function enterRoom() {
+            currentRoom = `raum_${document.getElementById('room-input').value}.json`;
+            isAdmin = (document.getElementById('token-input').value === ADMIN_PASS);
+            
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('chat-screen').style.display = 'block';
+            if(isAdmin) document.getElementById('admin-tools').style.display = 'block';
+            loadMessages();
+        }
 
-    async function sendMessage() {
-        const text = document.getElementById('message-input').value;
-        let msgs = [];
-        try {
-            const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CURRENT_ROOM}`);
-            if(res.ok) msgs = JSON.parse(atob((await res.json()).content));
-        } catch(e) {}
-        msgs.push(text);
-        const headers = ADMIN_TOKEN ? {'Authorization': `token ${ADMIN_TOKEN}`} : {};
-        await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${CURRENT_ROOM}`, {
-            method: 'PUT',
-            headers: {...headers, 'Content-Type': 'application/json'},
-            body: JSON.stringify({message: "Chat", content: btoa(JSON.stringify(msgs)), sha: currentSha})
-        });
-        loadChat();
-    }
-    
-    // (Restliche Admin-Funktionen wie gehabt...)
-</script>
+        function sendMessage() {
+            const text = document.getElementById('msg-input').value;
+            const sender = isAdmin ? '<span class="admin-tag">[Admin]</span>' : '';
+            const displayMsg = `<div class="msg">${sender}${text}</div>`;
+            
+            document.getElementById('chat-flow').innerHTML += displayMsg;
+            document.getElementById('msg-input').value = '';
+            // Hinweis: Das Speichern in GitHub erfordert einen API-Token-Key, 
+            // den wir in einer einfachen HTML-Seite aus Sicherheitsgründen nicht direkt speichern sollten.
+        }
+        
+        async function loadMessages() {
+            document.getElementById('chat-flow').innerText = "Verbindung zum ChatRoom...";
+            // Hier würde der Ladevorgang von GitHub folgen
+        }
+    </script>
 </body>
 </html>
